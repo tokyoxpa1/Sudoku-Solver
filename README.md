@@ -21,7 +21,7 @@
 
 1. 下載專案
 ```bash
-git clone https://github.com/yourusername/sudoku-solver.git
+git clone https://github.com/tokyoxpa1/sudoku-solver.git
 cd sudoku-solver
 ```
 
