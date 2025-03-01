@@ -1,0 +1,6 @@
+pillow
+numpy
+keyboard
+pyautogui
+inference_sdk
+ultralytics

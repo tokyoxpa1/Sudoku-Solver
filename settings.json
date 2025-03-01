@@ -1,0 +1,21 @@
+{
+  "hotkey": {
+    "mod1": "無",
+    "mod2": "無",
+    "key": "`"
+  },
+  "coordinates": {
+    "start_x": "235",
+    "start_y": "248",
+    "end_x": "672",
+    "end_y": "683"
+  },
+  "ui": {
+    "coord_expanded": false,
+    "hotkey_expanded": false,
+    "advanced_expanded": false
+  },
+  "advanced": {
+    "speed_scale": 10.0
+  }
+}
