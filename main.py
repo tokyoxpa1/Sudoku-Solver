@@ -7,6 +7,8 @@ import json
 from ultralytics import YOLO
 import numpy as np
 import pyautogui
+import random
+import string
 
 class SudokuSolver:
     """數獨解題器類別，使用優化的約束傳播和啟發式算法"""
@@ -118,7 +120,7 @@ class ScreenshotApp:
         # 操作按鈕
         button_frame = ttk.Frame(self.main_frame)
         button_frame.grid(row=0, column=0, columnspan=4, pady=10)
-        ttk.Button(button_frame, text="框選題目區域", command=self.start_selection).pack()
+        ttk.Button(button_frame, text="框選題目區域 (非題目區域不要框選)", command=self.start_selection).pack()
 
         # 區域展開狀態
         self.coord_expanded = False
@@ -146,6 +148,38 @@ class ScreenshotApp:
         self.advanced_frame = ttk.LabelFrame(self.main_frame, padding="5")
         self.advanced_frame.grid(row=5, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
         self.advanced_frame.grid_remove()  # 預設隱藏
+
+        # 添加功能選項
+        self.auto_fill_var = tk.BooleanVar(value=True)  # 預設打勾
+        self.show_result_var = tk.BooleanVar(value=False)  # 預設不打勾
+        
+        self.auto_fill_cb = ttk.Checkbutton(self.advanced_frame, text="自動填入答案",
+                                           variable=self.auto_fill_var,
+                                           command=self.toggle_auto_fill)
+        self.auto_fill_cb.grid(row=1, column=0, columnspan=3, sticky=tk.W, pady=5)
+        
+        self.show_result_cb = ttk.Checkbutton(self.advanced_frame, text="顯示解題結果",
+                                           variable=self.show_result_var,
+                                           command=self.toggle_result_display)
+        self.show_result_cb.grid(row=2, column=0, columnspan=3, sticky=tk.W)
+
+        # 添加結果顯示區域
+        self.result_frame = ttk.LabelFrame(self.main_frame, text="解題結果", padding="5")
+        self.result_frame.grid(row=6, column=0, columnspan=4, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        self.result_frame.grid_remove()  # 預設隱藏
+
+        # 創建文本顯示區域
+        self.result_text = tk.Text(self.result_frame, height=10, width=20, font=("微軟正黑體", 12))
+        self.result_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # 添加捲軸
+        result_scrollbar = ttk.Scrollbar(self.result_frame, orient="vertical", command=self.result_text.yview)
+        result_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.result_text.configure(yscrollcommand=result_scrollbar.set)
+
+        # 設置結果框架的列和行權重
+        self.result_frame.columnconfigure(0, weight=1)
+        self.result_frame.rowconfigure(0, weight=1)
         
         # 添加速度調整滑塊（1 到 100）
         ttk.Label(self.advanced_frame, text="自動填入速度調整:").grid(row=0, column=0, sticky=tk.W)
@@ -374,6 +408,34 @@ class ScreenshotApp:
             keyboard.unhook_all()
             self.toggle_hotkey_button.configure(text="啟動熱鍵")
             
+    def toggle_result_display(self):
+        """處理結果顯示區域的顯示/隱藏"""
+        if self.show_result_var.get():
+            self.result_frame.grid()
+        else:
+            self.result_frame.grid_remove()
+        # 更新視窗大小
+        self.root.update_idletasks()
+        if self.coord_expanded or self.hotkey_expanded or self.advanced_expanded or self.show_result_var.get():
+            new_height = self.root.winfo_reqheight()
+            self.root.geometry(f"{window_width}x{new_height}")
+        else:
+            self.root.geometry(f"{window_width}x{window_height}")
+        self.root.update()
+
+    def toggle_auto_fill(self):
+        """處理自動填入選項的切換"""
+        if self.auto_fill_var.get():
+            # 當自動填入打勾時，取消顯示解題結果並設為不可用
+            self.show_result_var.set(False)
+            self.show_result_cb.state(['disabled'])
+            self.result_frame.grid_remove()
+        else:
+            # 當自動填入取消時，啟用顯示解題結果選項
+            self.show_result_cb.state(['!disabled'])
+        # 觸發結果顯示區域的重新計算
+        self.toggle_result_display()
+    
     def save_settings(self):
         """儲存當前設定"""
         settings = {
@@ -394,7 +456,9 @@ class ScreenshotApp:
                 'advanced_expanded': self.advanced_expanded
             },
             'advanced': {
-                'speed_scale': self.speed_scale_var.get()
+                'speed_scale': self.speed_scale_var.get(),
+                'auto_fill': self.auto_fill_var.get(),
+                'show_result': self.show_result_var.get()
             }
         }
         try:
@@ -434,6 +498,12 @@ class ScreenshotApp:
                 if 'advanced' in settings:
                     if 'speed_scale' in settings['advanced']:
                         self.speed_scale_var.set(settings['advanced']['speed_scale'])
+                    if 'auto_fill' in settings['advanced']:
+                        self.auto_fill_var.set(settings['advanced']['auto_fill'])
+                    if 'show_result' in settings['advanced']:
+                        self.show_result_var.set(settings['advanced']['show_result'])
+                    # 初始化自動填入和顯示解題結果的狀態
+                    self.toggle_auto_fill()
                 
                 # 自動啟動熱鍵
                 self.root.after(1000, self.toggle_hotkey)  # 延遲1秒後啟動熱鍵
@@ -520,7 +590,12 @@ class ScreenshotApp:
         """使用優化的約束傳播和啟發式算法解決數獨"""
         solver = SudokuSolver()
         return solver.solve(grid)
-        
+
+    def random_string(length):
+        """生成指定長度的隨機字串"""
+        letters = string.ascii_letters + string.digits
+        return ''.join(random.choice(letters) for _ in range(length))
+
     def take_screenshot(self):
         try:
             # 暫時隱藏主視窗
@@ -534,13 +609,14 @@ class ScreenshotApp:
             screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))
             
             # 確保資料夾存在
-            if not os.path.exists('tmp'):
-                os.makedirs('tmp')
+            if not os.path.exists('img'):
+                os.makedirs('img')
 
             # 保存截圖
             i = 1
             while True:
-                filename = f'tmp/screenshot_{i}.png'
+                #檔名前綴為隨機6個字的英文字母和數字，後面為序號001~999.png
+                filename = os.path.join('img', f"{ScreenshotApp.random_string(6)}_{i:03d}.png")
                 if not os.path.exists(filename):
                     screenshot.save(filename)
                     # 將PIL Image轉換為numpy array以供YOLO使用
@@ -609,7 +685,7 @@ class ScreenshotApp:
             self.root.deiconify()
 
     def show_result(self, results, image_path):
-        """處理識別結果並自動填入答案"""
+        """處理識別結果並根據設置決定操作模式"""
         # 創建9x9的網格來儲存數字
         sudoku_grid = [[0 for _ in range(9)] for _ in range(9)]
         
@@ -633,8 +709,34 @@ class ScreenshotApp:
         
         # 嘗試解決數獨
         if self.solve_sudoku(solution_grid):
-            # 直接進行自動填入
-            self.auto_fill_solution(sudoku_grid, solution_grid)
+            if self.auto_fill_var.get():
+                # 自動填入答案
+                self.auto_fill_solution(sudoku_grid, solution_grid)
+            elif self.show_result_var.get():
+                # 清除舊的結果
+                self.result_text.delete('1.0', tk.END)
+                
+                # 顯示原始題目
+                self.result_text.insert(tk.END, "原始題目：\n")
+                for i in range(9):
+                    for j in range(9):
+                        self.result_text.insert(tk.END, str(sudoku_grid[i][j]) + " ")
+                    self.result_text.insert(tk.END, "\n")
+                
+                self.result_text.insert(tk.END, "\n解答：\n")
+                for i in range(9):
+                    for j in range(9):
+                        self.result_text.insert(tk.END, str(solution_grid[i][j]) + " ")
+                    self.result_text.insert(tk.END, "\n")
+                
+                # 顯示結果區域
+                self.result_frame.grid()
+                self.root.update_idletasks()
+                new_height = self.root.winfo_reqheight()
+                self.root.geometry(f"{window_width}x{new_height}")
+            else:
+                # 只進行截圖，不做其他操作
+                self.result_frame.grid_remove()
         else:
             print("錯誤", "此數獨題目無解！")
     

@@ -6,16 +6,18 @@
   },
   "coordinates": {
     "start_x": "235",
-    "start_y": "248",
-    "end_x": "672",
-    "end_y": "683"
+    "start_y": "250",
+    "end_x": "671",
+    "end_y": "685"
   },
   "ui": {
     "coord_expanded": false,
     "hotkey_expanded": false,
-    "advanced_expanded": false
+    "advanced_expanded": true
   },
   "advanced": {
-    "speed_scale": 10.0
+    "speed_scale": 10.0,
+    "auto_fill": false,
+    "show_result": true
   }
 }
