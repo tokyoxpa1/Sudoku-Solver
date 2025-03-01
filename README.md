@@ -133,11 +133,3 @@ python training.py
 ## ⚖️ 授權協議
 
 本專案採用 [MIT License](LICENSE) 授權
-
-## 🤝 參與貢獻
-
-1. Fork本專案
-2. 建立您的特性分支 (git checkout -b feature/AmazingFeature)
-3. 提交您的更改 (git commit -m 'Add some AmazingFeature')
-4. 推送到分支 (git push origin feature/AmazingFeature)
-5. 開啟一個Pull Request
